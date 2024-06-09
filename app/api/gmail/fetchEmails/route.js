@@ -72,4 +72,3 @@ export async function GET(request) {
     return NextResponse.json({ message: 'Error fetching or classifying emails' }, { status: 500 });
   }
 }
-
