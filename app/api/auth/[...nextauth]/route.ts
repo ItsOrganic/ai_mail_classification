@@ -1,7 +1,9 @@
-import NextAuth, { AuthOptions, SessionStrategy } from 'next-auth';
+// app/api/auth/[...nextauth]/route.ts
+
+import NextAuth from 'next-auth';
 import GoogleProvider from 'next-auth/providers/google';
 
-const authOptions: AuthOptions = {
+const authOptions = {
   providers: [
     GoogleProvider({
       clientId: process.env.GOOGLE_CLIENT_ID,
@@ -26,7 +28,7 @@ const authOptions: AuthOptions = {
     },
   },
   session: {
-    strategy: 'jwt' as SessionStrategy,  // Correctly specifying the strategy type
+    strategy: 'jwt',
   },
 };
 
