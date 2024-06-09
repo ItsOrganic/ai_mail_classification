@@ -28,7 +28,7 @@ const authOptions = {
     },
   },
   session: {
-    strategy: 'jwt',
+    strategy: 'jwt' as 'jwt', // explicitly cast the string to 'jwt'
   },
 };
 
