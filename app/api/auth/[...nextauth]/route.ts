@@ -8,14 +8,11 @@ const authOptions = {
       clientSecret: process.env.GOOGLE_CLIENT_SECRET,
       authorization: {
         params: {
-          scope: 'https://www.googleapis.com/auth/userinfo.email https://www.googleapis.com/auth/gmail.readonly',
+          scope: 'openid email profile https://www.googleapis.com/auth/gmail.readonly',
         },
       },
     }),
   ],
-  session: {
-    strategy: 'jwt',
-  },
   callbacks: {
     async jwt({ token, account }) {
       if (account) {
@@ -24,12 +21,12 @@ const authOptions = {
       return token;
     },
     async session({ session, token }) {
-      session.user.accessToken = token.accessToken;
+      session.accessToken = token.accessToken;
       return session;
     },
   },
+  session: {
+    strategy: 'jwt',
+  },
 };
 
-const handler = NextAuth(authOptions);
-
-export { handler as GET, handler as POST };
