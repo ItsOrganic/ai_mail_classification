@@ -1,6 +1,22 @@
 import NextAuth, { AuthOptions } from 'next-auth';
 import GoogleProvider from 'next-auth/providers/google';
 
+declare module 'next-auth' {
+  interface Session {
+    accessToken?: string;
+  }
+
+  interface User {
+    accessToken?: string;
+  }
+}
+
+declare module 'next-auth/jwt' {
+  interface JWT {
+    accessToken?: string;
+  }
+}
+
 const authOptions: AuthOptions = {
   providers: [
     GoogleProvider({
@@ -9,7 +25,7 @@ const authOptions: AuthOptions = {
     }),
   ],
   session: {
-    strategy: 'jwt', // Correctly typed as 'jwt' or 'database'
+    strategy: 'jwt',
   },
   callbacks: {
     async jwt({ token, account }) {
