@@ -1,20 +1,15 @@
-import NextAuth from 'next-auth';
-import GoogleProvider from 'next-auth/providers/google';
+import NextAuth, { AuthOptions } from 'next-auth';
+import GoogleProvider, { OAuthConfig, GoogleProfile } from 'next-auth/providers/google';
 
-const authOptions = {
+const authOptions: AuthOptions = {
   providers: [
     GoogleProvider({
       clientId: process.env.GOOGLE_CLIENT_ID,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-      authorization: {
-        params: {
-          scope: 'https://www.googleapis.com/auth/userinfo.email https://www.googleapis.com/auth/gmail.readonly',
-        },
-      },
     }),
   ],
   session: {
-    strategy: 'jwt',
+    strategy: 'jwt', // Correctly typed as 'jwt' or 'database'
   },
   callbacks: {
     async jwt({ token, account }) {
@@ -24,7 +19,7 @@ const authOptions = {
       return token;
     },
     async session({ session, token }) {
-      session.user.accessToken = token.accessToken;
+      session.accessToken = token.accessToken;
       return session;
     },
   },
@@ -33,4 +28,3 @@ const authOptions = {
 const handler = NextAuth(authOptions);
 
 export { handler as GET, handler as POST };
-
