@@ -32,22 +32,39 @@ export async function GET(request) {
     // Get session using getServerSession
     const session = await getServerSession(authOptions);
 
-    if (!session || !session.accessToken) {
-      console.error('No session or access token found');
-      return NextResponse.json({ message: 'Unauthorized - No valid session' }, { status: 401 });
+    if (!session) {
+      console.error('No session found');
+      return NextResponse.json({ message: 'Unauthorized - No session' }, { status: 401 });
     }
 
-    const accessToken = session.accessToken;
-    console.log('Using access token:', accessToken ? 'Token exists' : 'No token');
+    if (!session.accessToken) {
+      console.error('No access token in session');
+      return NextResponse.json({ message: 'Unauthorized - No access token' }, { status: 401 });
+    }
+
+    console.log('Session user:', session.user?.email);
+    console.log('Access token exists:', !!session.accessToken);
 
     const auth = new google.auth.OAuth2();
-    auth.setCredentials({ access_token: accessToken });
+    auth.setCredentials({ access_token: session.accessToken });
 
     const gmail = google.gmail({ version: 'v1', auth });
     const { searchParams } = new URL(request.url);
     const limit = parseInt(searchParams.get('limit'), 10) || 15;
 
     console.log('Fetching emails with limit:', limit);
+
+    // Test the Gmail API connection first
+    try {
+      const profile = await gmail.users.getProfile({ userId: 'me' });
+      console.log('Gmail profile:', profile.data.emailAddress);
+    } catch (profileError) {
+      console.error('Error getting Gmail profile:', profileError);
+      return NextResponse.json({
+        message: 'Gmail API access failed - please check permissions',
+        error: profileError.message
+      }, { status: 403 });
+    }
 
     const results = await gmail.users.messages.list({
       userId: 'me',
@@ -56,6 +73,10 @@ export async function GET(request) {
 
     const messages = results.data.messages || [];
     console.log('Found messages:', messages.length);
+
+    if (messages.length === 0) {
+      return NextResponse.json({ emails: [] }, { status: 200 });
+    }
 
     const emailPromises = messages.map(async (message) => {
       try {

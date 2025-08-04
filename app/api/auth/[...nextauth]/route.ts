@@ -2,17 +2,18 @@
 import NextAuth from "next-auth"
 import GoogleProvider from "next-auth/providers/google";
 
-
-const handler = NextAuth({
+export const authOptions = {
   providers: [
     GoogleProvider({
       clientId: process.env.GOOGLE_CLIENT_ID || "",
       clientSecret: process.env.GOOGLE_CLIENT_SECRET || "",
-      authorization: { params: { 
-        scope: 'openid email profile https://www.googleapis.com/auth/gmail.readonly',
-        access_type: 'offline', // Ensures a refresh token is provided
-        prompt: 'consent', // Forces the consent screen to ensure refresh token is provided on first login
-      } },
+      authorization: {
+        params: {
+          scope: 'openid email profile https://www.googleapis.com/auth/gmail.readonly',
+          access_type: 'offline',
+          prompt: 'consent',
+        }
+      },
     })
   ],
   secret: process.env.NEXTAUTH_SECRET,
@@ -43,15 +44,17 @@ const handler = NextAuth({
       return session;
     },
   }
-})
+};
 
-async function refreshAccessToken(token: JWT) {
+const handler = NextAuth(authOptions);
+
+async function refreshAccessToken(token) {
   try {
     const url =
       'https://oauth2.googleapis.com/token?' +
       new URLSearchParams({
-        client_id: process.env.GOOGLE_CLIENT_ID!,
-        client_secret: process.env.GOOGLE_CLIENT_SECRET!,
+        client_id: process.env.GOOGLE_CLIENT_ID,
+        client_secret: process.env.GOOGLE_CLIENT_SECRET,
         grant_type: 'refresh_token',
         refresh_token: token.refreshToken,
       });
@@ -73,7 +76,7 @@ async function refreshAccessToken(token: JWT) {
       ...token,
       accessToken: refreshedTokens.access_token,
       accessTokenExpires: Date.now() + refreshedTokens.expires_in * 1000,
-      refreshToken: refreshedTokens.refresh_token ?? token.refreshToken, // Fall back to old refresh token
+      refreshToken: refreshedTokens.refresh_token ?? token.refreshToken,
     };
   } catch (error) {
     console.error('Error refreshing access token', error);

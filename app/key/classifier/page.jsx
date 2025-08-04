@@ -8,16 +8,23 @@ export default function Classifier() {
   const [loading, setLoading] = useState(false);
   const [dropdownValue, setDropdownValue] = useState(15);
   const [isFetching, setIsFetching] = useState(true);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
     async function fetchEmails() {
       setIsFetching(true);
+      setError(null);
       try {
         const response = await fetch(`/api/gmail/fetchEmails?limit=${dropdownValue}`);
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.message || 'Failed to fetch emails');
+        }
         const data = await response.json();
         setEmails(data.emails || []);
       } catch (error) {
         console.error('Error fetching emails:', error.message);
+        setError(error.message);
       } finally {
         setIsFetching(false);
       }
@@ -27,16 +34,34 @@ export default function Classifier() {
 
   const handleClassify = async () => {
     setLoading(true);
+    setError(null);
     try {
+      // Get API key from localStorage
+      const apiKey = localStorage.getItem('gemini-api-key');
+
+      if (!apiKey) {
+        throw new Error('Please enter your Gemini API key first');
+      }
+
       const response = await fetch('/api/gmail/classifyEmails', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ emails }),
+        body: JSON.stringify({
+          emails,
+          apiKey // Send API key in request body
+        }),
       });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to classify emails');
+      }
+
       const data = await response.json();
       setEmails(data.classifiedEmails || []);
     } catch (error) {
       console.error('Error classifying emails:', error.message);
+      setError(error.message);
     } finally {
       setLoading(false);
     }
@@ -176,6 +201,18 @@ export default function Classifier() {
           </div>
         </div>
       </div>
+
+      {/* Error Display */}
+      {error && (
+        <div className="glass-effect border-l-4 border-red-500 p-4 mx-4 mt-4">
+          <div className="flex items-center space-x-2">
+            <svg className="w-5 h-5 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <p className="text-red-400 font-medium">Error: {error}</p>
+          </div>
+        </div>
+      )}
 
       {/* Main Content */}
       <div className="flex h-[calc(100vh-4rem)]">
